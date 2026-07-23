@@ -1174,6 +1174,7 @@
                     </svg>
                 </button>
             </div>
+        </div> <!-- ESTE ES EL DIV FALTANTE QUE SE DEBE AGREGAR -->
 
         <div class="nav-row" id="navNormal">
             <button class="search-trigger-btn" onclick="toggleSearch(true)">
@@ -1722,15 +1723,19 @@
 
             const filtered = products.filter(p => {
                 const matchCat = (currentCategory === 'todas' || p.cat === currentCategory);
+                
+                // Filtro de búsqueda por texto (Se conserva y aplica para ambos modos)
+                const matchSearch = p.name.toLowerCase().includes(searchVal) || p.desc.toLowerCase().includes(searchVal);
+                
                 if (!isVisualizingAsAdmin) {
-                    // Filtros para la vista de cliente (oculta inactivos)
-                    return p.available && matchCat && (p.name.toLowerCase().includes(searchVal) || p.desc.toLowerCase().includes(searchVal));
+                    // Filtros exclusivos del cliente (oculta productos inactivos)
+                    return p.available && matchCat && matchSearch;
                 } else {
-                    // Filtros para la vista de administración
+                    // Filtros exclusivos de administración (muestra visibles/ocultos según el FAB selector)
                     let matchVis = true;
                     if (visibilityState === 1) matchVis = (p.available === true);
                     if (visibilityState === 2) matchVis = (p.available === false);
-                    return matchCat && matchVis;
+                    return matchCat && matchVis && matchSearch;
                 }
             });
 
@@ -2135,7 +2140,7 @@
                 // Cambiar a vista de cliente
                 body.classList.remove('modo-admin');
                 body.classList.add('modo-cliente');
-                if (subtitle) subtitle.innerText = "VISTA PREVIA CLIENTE";
+                if (subtitle) subtitle.innerText = "VISTA PREVIA DEL CLIENTE";
                 // Icono Ojo Tachado (Volver al panel admin)
                 if (icon) icon.innerHTML = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>`;
             } else {
