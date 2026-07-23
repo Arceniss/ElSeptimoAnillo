@@ -1162,7 +1162,7 @@
                         <circle cx="12" cy="12" r="3"></circle>
                     </svg>
                 </button>
-                
+
                 <button class="btn-header-icon" onclick="openShareModal()">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                         stroke-linecap="round" stroke-linejoin="round">
@@ -1563,9 +1563,17 @@
         // 1. TUS CREDENCIALES
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyU2rYvLm_xhta_k-rXfJ-22l8tE4yKVgStBWguYFxDjG5MPY1yGKXB5eLjdsWIAGw/exec";
 
-        // 2. MULTI-EMPRENDEDOR: leer ?shop= de la URL
+        // 2. MULTI-EMPRENDEDOR: leer ?shop= de la URL y guardarlo
         const _urlParams = new URLSearchParams(window.location.search);
-        const SHOP_ID = _urlParams.get('shop') || null;
+        let SHOP_ID = _urlParams.get('shop');
+
+        if (SHOP_ID) {
+            // Si el ID viene en la URL, lo guardamos en la memoria del dispositivo
+            localStorage.setItem('tienda_guardada', SHOP_ID);
+        } else {
+            // Si no viene en la URL (porque abrió la App instalada), lo recuperamos
+            SHOP_ID = localStorage.getItem('tienda_guardada');
+        }
 
         window.LINK_CLIENTES = window.location.href.split('?')[0] + (SHOP_ID ? `?shop=${SHOP_ID}` : '');
 
@@ -1581,7 +1589,7 @@
             document.body.classList.remove('modo-cliente');
             document.body.classList.add('modo-admin');
             document.getElementById('headerSubtitle').innerText = "PANEL DE ADMINISTRACIÓN";
-            
+
             // Muestra el botón de alternar vista únicamente al administrador
             const btnToggle = document.getElementById('btnToggleMode');
             if (btnToggle) btnToggle.style.display = "flex";
@@ -1626,7 +1634,7 @@
                 TEXTO_PLACEHOLDER = (placeholderSheet && placeholderSheet.toString().trim() !== "") 
                     ? placeholderSheet.toString().trim() 
                     : "Tu nombre y apellido...";
-                
+
                 //TEXTO_MENSAJE = data.mensaje || "Hola, mi nombre es *{nombre}*.\nMe interesa el siguiente pedido:\n\n";
 
                 const rawMensaje = data.mensaje || "Hola, mi nombre es *{nombre}*.\nMe interesa el siguiente pedido:\n\n";
@@ -1723,10 +1731,10 @@
 
             const filtered = products.filter(p => {
                 const matchCat = (currentCategory === 'todas' || p.cat === currentCategory);
-                
+
                 // Filtro de búsqueda por texto (Se conserva y aplica para ambos modos)
                 const matchSearch = p.name.toLowerCase().includes(searchVal) || p.desc.toLowerCase().includes(searchVal);
-                
+
                 if (!isVisualizingAsAdmin) {
                     // Filtros exclusivos del cliente (oculta productos inactivos)
                     return p.available && matchCat && matchSearch;
@@ -2023,7 +2031,7 @@
 
         function renderCartModal() {
             const list = document.getElementById('ticketList'); list.innerHTML = ""; let total = 0;
-            const cartItems = products.qtyfilter(p => p.qty > 0);
+            const cartItems = products.filter(p => p.qty > 0); // Corrección: "filter" en lugar de "qtyfilter"
             if (cartItems.length === 0) { closeCartModal(); return; }
             cartItems.forEach(p => {
                 const sub = p.qty * p.price; total += sub;
@@ -2135,7 +2143,7 @@
             const body = document.body;
             const icon = document.getElementById('toggleModeIcon');
             const subtitle = document.getElementById('headerSubtitle');
-            
+
             if (body.classList.contains('modo-admin')) {
                 // Cambiar a vista de cliente
                 body.classList.remove('modo-admin');
@@ -2151,7 +2159,7 @@
                 // Icono Ojo Abierto (Ir a vista cliente)
                 if (icon) icon.innerHTML = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>`;
             }
-            
+
             // Volvemos a renderizar los productos y actualizar el carrito para que se apliquen los controles adecuados
             renderProducts();
             updateCartBar();
