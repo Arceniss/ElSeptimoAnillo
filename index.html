@@ -98,7 +98,7 @@
 
         .brand-info h1 {
             font-family: var(--font-main);
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 600;
             letter-spacing: 0.5px;
             color: var(--primary);
@@ -1148,7 +1148,7 @@
         <div class="brand-header">
             <div class="brand-info">
                 <!-- Se cambió el nombre a logo.png por problemas de codificación de lectura local en móviles -->
-                <h1><img src="logo.png" alt="Logo" class="header-icon"><span>@</span>el<span>séptimo</span>anillo</h1>
+                <h1><img src="logo.png" alt="Logo" class="header-icon">el<span>séptimo</span>anillo</h1>
                 <p id="headerSubtitle">Bisutería a mano para brillar</p>
             </div>
 
@@ -1162,7 +1162,7 @@
                         <circle cx="12" cy="12" r="3"></circle>
                     </svg>
                 </button>
-
+                
                 <button class="btn-header-icon" onclick="openShareModal()">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                         stroke-linecap="round" stroke-linejoin="round">
@@ -1579,6 +1579,7 @@
 
         let WHATSAPP_EMPRENDEDOR = "";
         let MONEDA = "$";
+        let IMGBB_KEY = "";
 
         let TEXTO_PLACEHOLDER = "Tu nombre y apellido...";
         let TEXTO_MENSAJE = "Hola, mi nombre es *{nombre}*.\nMe interesa el siguiente pedido:\n\n";
@@ -1589,7 +1590,7 @@
             document.body.classList.remove('modo-cliente');
             document.body.classList.add('modo-admin');
             document.getElementById('headerSubtitle').innerText = "PANEL DE ADMINISTRACIÓN";
-
+            
             // Muestra el botón de alternar vista únicamente al administrador
             const btnToggle = document.getElementById('btnToggleMode');
             if (btnToggle) btnToggle.style.display = "flex";
@@ -1628,13 +1629,14 @@
                 MONEDA = data.moneda || "$";
                 // Limpiamos el número de cualquier espacio, símbolo raro que haya puesto en Sheets.
                 WHATSAPP_EMPRENDEDOR = data.whatsapp ? data.whatsapp.toString().replace(/[^0-9]/g, '') : "";
+                IMGBB_KEY = data.imgbb_key || data.imgbb || "";
 
                 // Validación más fuerte: atrapa diferencias de mayúsculas/minúsculas y evita celdas con espacios vacíos
                 const placeholderSheet = data.placeholder || data.texto_placeholder || data.Placeholder;
                 TEXTO_PLACEHOLDER = (placeholderSheet && placeholderSheet.toString().trim() !== "") 
                     ? placeholderSheet.toString().trim() 
                     : "Tu nombre y apellido...";
-
+                
                 //TEXTO_MENSAJE = data.mensaje || "Hola, mi nombre es *{nombre}*.\nMe interesa el siguiente pedido:\n\n";
 
                 const rawMensaje = data.mensaje || "Hola, mi nombre es *{nombre}*.\nMe interesa el siguiente pedido:\n\n";
@@ -1731,10 +1733,10 @@
 
             const filtered = products.filter(p => {
                 const matchCat = (currentCategory === 'todas' || p.cat === currentCategory);
-
+                
                 // Filtro de búsqueda por texto (Se conserva y aplica para ambos modos)
                 const matchSearch = p.name.toLowerCase().includes(searchVal) || p.desc.toLowerCase().includes(searchVal);
-
+                
                 if (!isVisualizingAsAdmin) {
                     // Filtros exclusivos del cliente (oculta productos inactivos)
                     return p.available && matchCat && matchSearch;
@@ -1933,14 +1935,26 @@
                 }
 
                 if (file) {
+                    // Si el backend no devolvió ninguna API Key de ImgBB para este shop
+                    if (!IMGBB_KEY) {
+                        showAlert("Configuración Pendiente", "Este perfil de emprendedor no tiene una clave de ImgBB configurada en Google Sheets. No se pueden subir imágenes.");
+                        btn.innerText = "Guardar Nuevo"; btn.disabled = false; return;
+                    }
+
                     try {
                         const processedBlob = await processImageToWebp(file);
                         const formData = new FormData(); formData.append("image", processedBlob, "foto.webp");
                         const imgRes = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method: "POST", body: formData });
-                        const imgData = await imgRes.json(); finalImg = imgData.data.url;
+                        const imgData = await imgRes.json(); 
+                        
+                        if (imgData && imgData.data && imgData.data.url) {
+                            finalImg = imgData.data.url;
+                        } else {
+                            throw new Error("No se obtuvo URL de imagen");
+                        }
                     } catch (error) {
-                        showAlert("Error de subida", "Hubo un error con la imagen. Intenta con otra.");
-                        btn.innerText = "Guardar"; btn.disabled = false; return;
+                        showAlert("Error de subida", "Hubo un error al subir la imagen. Verifica que la clave de ImgBB asignada a este emprendedor en Google Sheets sea válida.");
+                        btn.innerText = itemId ? "Actualizar" : "Guardar Nuevo"; btn.disabled = false; return;
                     }
                 }
 
@@ -2143,7 +2157,7 @@
             const body = document.body;
             const icon = document.getElementById('toggleModeIcon');
             const subtitle = document.getElementById('headerSubtitle');
-
+            
             if (body.classList.contains('modo-admin')) {
                 // Cambiar a vista de cliente
                 body.classList.remove('modo-admin');
@@ -2159,7 +2173,7 @@
                 // Icono Ojo Abierto (Ir a vista cliente)
                 if (icon) icon.innerHTML = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>`;
             }
-
+            
             // Volvemos a renderizar los productos y actualizar el carrito para que se apliquen los controles adecuados
             renderProducts();
             updateCartBar();
