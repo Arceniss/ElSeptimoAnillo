@@ -1,4 +1,4 @@
-const CACHE_NAME = 'elséptimoanillo-cache-v0.12';
+const CACHE_NAME = 'elséptimoanillo-cache-v0.13';
 const assets = [
   './',
   './index.html',
